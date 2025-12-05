@@ -16,4 +16,13 @@ pool.on('error', (err) => {
     console.error('Unexpected error on idle client', err);
 })
 
-export default pool;
+async function isDatabaseConnected(): Promise<boolean> {
+    try {
+        await pool.query('SELECT 1');
+        return true;
+    } catch (_err) {
+        return false;
+    }
+}
+
+export { pool, isDatabaseConnected };

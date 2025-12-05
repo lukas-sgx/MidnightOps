@@ -16,5 +16,14 @@ redisClient.on('error', (err) => {
     console.error('Unexpected error on idle client', err);
 })
 
+async function isRedisConnected(): Promise<boolean> {
+    try {
+        await redisClient.ping();
+        return true;
+    } catch (_err) {
+        return false;
+    }
+}
+
 export default redisClient;
-export { connectRedis };
+export { connectRedis, isRedisConnected };

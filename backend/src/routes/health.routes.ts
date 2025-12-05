@@ -1,28 +1,10 @@
 import { Router } from "express";
-import pool from "../config/db";
-import redisClient from "../config/redis";
+import { isDatabaseConnected } from "../config/db";
+import { isRedisConnected } from "../config/redis";
 
 const router = Router();
 
-async function isDatabaseConnected(): Promise<boolean> {
-    try {
-        await pool.query('SELECT 1');
-        return true;
-    } catch (_err) {
-        return false;
-    }
-}
-
-async function isRedisConnected(): Promise<boolean> {
-    try {
-        await redisClient.ping();
-        return true;
-    } catch (_err) {
-        return false;
-    }
-}
-
-router.get("/", async (_req, res) => {
+router.get("/health", async (_req, res) => {
     var result = {
         status: "FAIL",
         message: "Service is unhealthy",

@@ -4,7 +4,6 @@ import { isDatabaseConnected, pool } from "../config/db";
 const router = Router();
 
 router.get("/incidents", async (_req, res) => {
-    await isDatabaseConnected();
     await pool.query('SELECT * FROM incidents').then((result) => {
         return res.status(200).json({ incidents: result.rows });
     }).catch((err) => {

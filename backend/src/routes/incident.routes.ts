@@ -30,4 +30,28 @@ router.post("/incidents", async (req, res) => {
     });
 });
 
+router.get("/incidents/:id", async (req, res) => {
+    const { id } = req.params;
+
+    await pool.query('SELECT * FROM incidents WHERE id = $1', [id]).then((result) => {
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "Incident not found" });
+        }
+        return res.status(200).json({ incident: result.rows[0] });
+    }).catch((err) => {
+        console.error('Error fetching incident from database', err);
+        return res.status(500).json({ message: "Internal Server Error" });
+    });
+});
+
+router.get("/incidents/:id/alerts", async (req, res) => {
+    const { id } = req.params;
+    await pool.query('SELECT * FROM alerts WHERE incident_id = $1', [id]).then((result) => {
+        return res.status(200).json({ alerts: result.rows });
+    }).catch((err) => {
+        console.error('Error fetching alerts from database', err);
+        return res.status(500).json({ message: "Internal Server Error" });
+    });
+});
+
 export default router;

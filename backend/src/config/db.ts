@@ -12,4 +12,8 @@ pool.on('connect', () => {
     console.log('Connected to postgreSQL on 0.0.0.0:5432');
 });
 
+pool.on('error', (err) => {
+    console.error('Unexpected error on idle client', err);
+})
+
 export default pool;

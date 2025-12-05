@@ -34,9 +34,6 @@ services:
       POSTGRES_USER: midnightops
       POSTGRES_PASSWORD: midnightops
       POSTGRES_DB: midnightops_db
-    depends_on:
-      - redis
-      - postgres
 
 networks:
   midnightops_network:

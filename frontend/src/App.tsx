@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import './App.css'
 import React from 'react';
-
+const API_URL = import.meta.env.VITE_API_URL || 'http://api.midnightops.soigneux.works/api/v1';
 
 function App() {
     const [email, setEmail] = useState('test@epitech.eu');
@@ -15,7 +15,7 @@ function App() {
         setError(null);
 
         try {
-            const response = await fetch('http://api.midnightops.soigneux.works/api/v1/auth/login', {
+            const response = await fetch(`${API_URL}/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

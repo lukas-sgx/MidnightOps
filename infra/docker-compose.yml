@@ -30,7 +30,9 @@ services:
       dockerfile: Dockerfile
     container_name: midnightops_backend
     ports:
-      - "3001:3000"
+      - "3000:3000"
+    expose:
+      - "3000"
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -39,10 +41,6 @@ services:
       POSTGRES_USER: midnightops
       POSTGRES_PASSWORD: midnightops
       POSTGRES_DB: midnightops_db
-      # expose backend via nginx-proxy
-      VIRTUAL_HOST: api.midnightops.soigneux.works
-      VIRTUAL_PORT: 3000
-      VIRTUAL_PROTO: http
     networks:
       - midnightops_network
 
@@ -70,6 +68,7 @@ services:
       - "443:443"
     environment:
       ENABLE_IPV6: "false"
+      DEFAULT_HOST: midnightops.soigneux.works
     volumes:
       - /var/run/docker.sock:/tmp/docker.sock:ro
       - ./certs:/etc/nginx/certs

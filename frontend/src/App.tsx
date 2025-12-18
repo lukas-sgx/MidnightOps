@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import './App.css'
 import React from 'react';
-const API_URL = import.meta.env.VITE_API_URL || 'http://api.midnightops.soigneux.works/api/v1';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
 
 function App() {
     const [email, setEmail] = useState('test@epitech.eu');

@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  (typeof window !== 'undefined'
+    ? `${window.location.origin}/api/v1`
+    : 'http://localhost:3000/api/v1');
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -18,19 +22,18 @@ export default function Login() {
 
     try {
         const response = await fetch(`${API_URL}/auth/login`, {
-            method: 'POST',
-            headers: {
+          method: 'POST',
+          headers: {
             'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email }),
+          },
+          body: JSON.stringify({ email }),
         });
 
-        if (!response.ok) {
-            const data = await response.json();
-            throw new Error(data.message || 'Login failed');
-        }
-
         const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Login failed');
+        }
         console.log('Login successful:', data);
         
         if (data.token) {

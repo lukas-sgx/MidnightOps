@@ -13,7 +13,7 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white">Dashboard</h1>
+            <h1 className="text-3xl font-bold text-white justify-center flex items-center"> <img src="/midnightops.png" alt="MidnightOps Logo" className="inline-block w-9 h-9 mr-2" /> Dashboard</h1>
             <p className="text-slate-400 mt-1">Welcome to MidnightOps</p>
           </div>
           <button

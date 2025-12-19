@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
@@ -7,6 +7,12 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (localStorage.getItem('authToken')) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -50,7 +56,7 @@ export default function Login() {
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">MidnightOps</h1>
+          <h1 className="text-4xl font-bold text-white mb-2 justify-center flex items-center"><img src="/midnightops.png" alt="MidnightOps Logo" className="inline-block w-10 h-10 mr-2" /> MidnightOps</h1>
           <p className="text-slate-400">Incident Management System</p>
         </div>
 

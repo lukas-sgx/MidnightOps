@@ -1,12 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const API_URL =
-  import.meta.env.VITE_API_URL ||
-  (typeof window !== 'undefined'
-    ? `${window.location.origin}/api/v1`
-    : 'http://localhost:3000/api/v1');
-
 export default function Login() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,7 +15,7 @@ export default function Login() {
     setSuccess(false);
 
     try {
-        const response = await fetch(`${API_URL}/auth/login`, {
+        const response = await fetch(`/auth/login`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

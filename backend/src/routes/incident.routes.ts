@@ -1,9 +1,13 @@
 import { Router } from "express";
 import { isDatabaseConnected, pool } from "../config/db";
+import { authenticateToken } from "../middlewares/jwt";
 
 const router = Router();
 
-router.get("/incidents", async (_req, res) => {
+router.get("/incidents", async (req, res) => {
+    if (!authenticateToken(req.headers.authorization?.split(" ")[1] || "") != null) {
+            return res.status(401).json({ message: "Unauthorized" });
+    }
     await pool.query('SELECT * FROM incidents').then((result) => {
         return res.status(200).json({ incidents: result.rows });
     }).catch((err) => {
@@ -14,6 +18,10 @@ router.get("/incidents", async (_req, res) => {
 
 router.post("/incidents", async (req, res) => {
     const { title, description, severity } = req.body;
+
+    if (!authenticateToken(req.headers.authorization?.split(" ")[1] || "") != null) {
+            return res.status(401).json({ message: "Unauthorized" });
+    }
 
     if (!title || !description || !severity) {
         return res.status(400).json({ message: "Missing required fields" });
@@ -33,6 +41,10 @@ router.post("/incidents", async (req, res) => {
 router.get("/incidents/:id", async (req, res) => {
     const { id } = req.params;
 
+    if (!authenticateToken(req.headers.authorization?.split(" ")[1] || "") != null) {
+            return res.status(401).json({ message: "Unauthorized" });
+    }
+
     await pool.query('SELECT * FROM incidents WHERE id = $1', [id]).then((result) => {
         if (result.rows.length === 0) {
             return res.status(404).json({ message: "Incident not found" });
@@ -46,6 +58,9 @@ router.get("/incidents/:id", async (req, res) => {
 
 router.get("/incidents/:id/alerts", async (req, res) => {
     const { id } = req.params;
+    if (!authenticateToken(req.headers.authorization?.split(" ")[1] || "") != null) {
+            return res.status(401).json({ message: "Unauthorized" });
+    }
     await pool.query('SELECT * FROM alerts WHERE incident_id = $1', [id]).then((result) => {
         return res.status(200).json({ alerts: result.rows });
     }).catch((err) => {

@@ -20,7 +20,7 @@ services:
             - "5432:5432"
         volumes:
             - ./initdb:/docker-entrypoint-initdb.d
-            - pgdata:/var/lib/postgresql
+            - pgdata:/var/lib/postgresql/data
         networks:
             - midnightops_network
 

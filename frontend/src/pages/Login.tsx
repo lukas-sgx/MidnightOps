@@ -17,31 +17,30 @@ export default function Login() {
     setSuccess(false);
 
     try {
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
+        const response = await fetch(`${API_URL}/auth/login`, {
+            method: 'POST',
+            headers: {
+            'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email }),
+        });
 
-      if (!response.ok) {
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.message || 'Login failed');
+        }
+
         const data = await response.json();
-        throw new Error(data.message || 'Login failed');
-      }
-
-      const data = await response.json();
-      console.log('Login successful:', data);
-      
-      // Store token if provided
-      if (data.token) {
-        localStorage.setItem('authToken', data.token);
-      }
-      
-      setSuccess(true);
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1500);
+        console.log('Login successful:', data);
+        
+        if (data.token) {
+            localStorage.setItem('authToken', data.token);
+        }
+        
+        setSuccess(true);
+        setTimeout(() => {
+            navigate('/dashboard')
+        }, 1500);
     } catch (err: any) {
       setError(err.message || 'An error occurred. Please try again.');
     } finally {

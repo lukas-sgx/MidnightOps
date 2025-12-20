@@ -34,7 +34,6 @@ export default function Login() {
         if (!response.ok) {
           throw new Error(data.message || 'Login failed');
         }
-        console.log('Login successful:', data);
         
         if (data.token) {
             localStorage.setItem('authToken', data.token);

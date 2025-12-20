@@ -41,6 +41,10 @@ services:
             POSTGRES_USER: midnightops
             POSTGRES_PASSWORD: midnightops
             POSTGRES_DB: midnightops_db
+            VIRTUAL_HOST: midnightops.soigneux.works
+            VIRTUAL_PORT: 3000
+            VIRTUAL_PROTO: http
+            VIRTUAL_PATH: /api,/api/
         networks:
             - midnightops_network
 
@@ -56,6 +60,7 @@ services:
             VIRTUAL_HOST: midnightops.soigneux.works
             VIRTUAL_PORT: 80
             VIRTUAL_PROTO: http
+            LETSENCRYPT_HOST: midnightops.soigneux.works
         networks:
             - midnightops_network
 
@@ -71,8 +76,25 @@ services:
         volumes:
             - /var/run/docker.sock:/tmp/docker.sock:ro
             - ./certs:/etc/nginx/certs
+            - nginx_vhost:/etc/nginx/vhost.d
+            - nginx_html:/usr/share/nginx/html
         networks:
             - midnightops_network
+        
+    nginx-proxy-acme:
+        image: nginxproxy/acme-companion
+        container_name: nginx-proxy-acme
+        environment:
+        - DEFAULT_EMAIL=lukas@epitech.eu
+        - NGINX_PROXY_CONTAINER=nginx-proxy
+        - ACME_CA_URI=https://acme-staging-v02.api.letsencrypt.org/directory
+        volumes:
+        - /var/run/docker.sock:/var/run/docker.sock:ro
+        - ./certs:/etc/nginx/certs
+        - nginx_vhost:/etc/nginx/vhost.d
+        - nginx_html:/usr/share/nginx/html
+        - acme:/etc/acme.sh
+
     mailserver:
         image: docker.io/mailserver/docker-mailserver:latest
         hostname: mail
@@ -101,3 +123,9 @@ volumes:
     driver: local
   pgdata:
     driver: local
+    nginx_vhost:
+        driver: local
+    nginx_html:
+        driver: local
+    acme:
+        driver: local

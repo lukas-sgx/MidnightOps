@@ -29,8 +29,6 @@ services:
             context: ../backend
             dockerfile: Dockerfile
         container_name: midnightops_backend
-        ports:
-            - "3000:3000"
         expose:
             - "3000"
         environment:
@@ -85,15 +83,14 @@ services:
         image: nginxproxy/acme-companion
         container_name: nginx-proxy-acme
         environment:
-        - DEFAULT_EMAIL=lukas@epitech.eu
-        - NGINX_PROXY_CONTAINER=nginx-proxy
-        - ACME_CA_URI=https://acme-staging-v02.api.letsencrypt.org/directory
+            - DEFAULT_EMAIL=lukas@epitech.eu
+            - NGINX_PROXY_CONTAINER=nginx-proxy
         volumes:
-        - /var/run/docker.sock:/var/run/docker.sock:ro
-        - ./certs:/etc/nginx/certs
-        - nginx_vhost:/etc/nginx/vhost.d
-        - nginx_html:/usr/share/nginx/html
-        - acme:/etc/acme.sh
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - ./certs:/etc/nginx/certs
+            - nginx_vhost:/etc/nginx/vhost.d
+            - nginx_html:/usr/share/nginx/html
+            - acme:/etc/acme.sh
 
     mailserver:
         image: docker.io/mailserver/docker-mailserver:latest
@@ -102,27 +99,27 @@ services:
         container_name: mailserver
         env_file: mailserver.env
         ports:
-        - "25:25"      # SMTP
-        - "587:587"    # Submission
-        - "993:993"    # IMAPS
+            - "25:25"      # SMTP
+            - "587:587"    # Submission
+            - "993:993"    # IMAPS
         volumes:
-        - ./data/maildata:/var/mail
-        - ./data/mailstate:/var/mail-state
-        - ./data/maillogs:/var/log/mail
-        - ./config/:/tmp/docker-mailserver/
+            - ./data/maildata:/var/mail
+            - ./data/mailstate:/var/mail-state
+            - ./data/maillogs:/var/log/mail
+            - ./config/:/tmp/docker-mailserver/
         restart: always
         networks:
-        - midnightops_network
+            - midnightops_network
 
 networks:
   midnightops_network:
     driver: bridge
 
 volumes:
-  redis_data:
-    driver: local
-  pgdata:
-    driver: local
+    redis_data:
+        driver: local
+    pgdata:
+        driver: local
     nginx_vhost:
         driver: local
     nginx_html:

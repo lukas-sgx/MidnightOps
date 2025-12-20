@@ -37,6 +37,10 @@ export default function Dashboard() {
         setInitials(firstName.charAt(0).toUpperCase() + lastName.charAt(0).toUpperCase());
         setEmail(data.user.email);
       }
+      if (!data) {
+        localStorage.removeItem('authToken');
+        navigate('/login', { replace: true });
+      }
     });
   }, []);
 

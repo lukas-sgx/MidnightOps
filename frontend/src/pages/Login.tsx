@@ -6,6 +6,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [verifcode, setVerifcode] = useState(false);
+  const [code, setCode] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -33,6 +35,43 @@ export default function Login() {
 
         if (!response.ok) {
           throw new Error(data.message || 'Login failed');
+        }
+        
+        setVerifcode(true);
+        // if (data.token) {
+        //     localStorage.setItem('authToken', data.token);
+        // }
+        
+        // setSuccess(true);
+        // setTimeout(() => {
+        //     navigate('/dashboard')
+        // }, 1500);
+    } catch (err: any) {
+      setError(err.message || 'An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+        const response = await fetch(`/api/v1/auth/verify`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, code }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Verification failed');
         }
         
         if (data.token) {
@@ -77,7 +116,26 @@ export default function Login() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={!verifcode ? handleSubmit : handleVerifyCode} className="space-y-5">
+                        {verifcode ? (
+              <div>
+                <label htmlFor="code" className="block text-sm font-medium text-slate-300 mb-2">
+                  Verification Code
+                </label>
+                <input
+                  id="code"
+                  type="number"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="Enter the code sent to your email"
+                  autoComplete="one-time-code"
+                  required
+                  disabled={loading}
+                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 disabled:opacity-50 transition"
+                />
+              </div>
+            ) :
+            
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
                 Email Address
@@ -93,11 +151,10 @@ export default function Login() {
                 disabled={loading}
                 className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 disabled:opacity-50 transition"
               />
-            </div>
-
+            </div> }
             <button
               type="submit"
-              disabled={loading || !email}
+              disabled={loading || (!email && !verifcode)}
               className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center"
             >
               {loading ? (
@@ -109,7 +166,7 @@ export default function Login() {
                   Logging in...
                 </>
               ) : (
-                'Sign In'
+                verifcode ? 'Send Verify Code' : 'Sign In'
               )}
             </button>
           </form>

@@ -1,6 +1,5 @@
 import { pool } from '../config/db';
 import { Router } from 'express';
-import { generateToken } from './jwt';
 import nodemailer from 'nodemailer';
 import redisClient from '../config/redis';
 
@@ -17,8 +16,8 @@ async function send_code(dest: string, code: number) {
     host: "mail.soigneux.works",
     port: 587,
     auth: {
-      user: process.env.SMTP_USER!,
-      pass: process.env.SMTP_PASS!,
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
     },
   });
 
@@ -47,8 +46,6 @@ router.post('/login', async (req, res) => {
             await redisClient.setEx(`login_code_${email}`, 600, code.toString());
         }
         return res.status(200).json({ message: 'If the email exists, a verification code has been sent.' });
-        const token = generateToken({ userId: result.rows[0].id, email: result.rows[0].email });
-        return res.status(200).json({ message: 'Login successful', user: result.rows[0], token: token});
     } catch (err) {
         console.error('Error during login', err);
         return res.status(500).json({ message: 'Internal Server Error' });

@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"math"
 	"os"
-	"time"
-	"strconv"
 	"os/exec"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/shirou/gopsutil/v4/cpu"
@@ -44,32 +45,33 @@ func getHostname() string {
 func getLastDeployment() string {
 	os.Chdir("../infra")
 	deploy, _ := exec.Command("sh", "-c", "docker compose logs --since=24h | grep -Eic 'Starting|Recreating|Pulling|Creating'").Output()
-	return string(deploy)
+	return strings.TrimSpace(string(deploy))
 }
 
 func getRedisClient() *redis.Client {
-	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "",
-		DB:       0,
+	host := os.Getenv("REDIS_HOST")
+	port := os.Getenv("REDIS_PORT")
+
+	rdb := redis.NewClient(&redis.Options{
+		Addr: fmt.Sprintf("%s:%s", host, port),
 	})
-	return client
+	return rdb
 }
 
 func metrics() {
 	redisClient := getRedisClient()
 	ctx := context.Background()
 
-	hostname := getHostname()
+	hostname := "arch"
 	fmt.Println("[Agent] Hostname:", hostname)
 	for true {
 		hashField := map[string]string{
-			"cpu": strconv.FormatFloat(math.Round(getCPUUsage()*100)/100, 'f', 2, 64),
-			"memory": strconv.FormatFloat(math.Round(getMemoryUsage()*100)/100, 'f', 2, 64),
-			"deployments_last_24h": getLastDeployment(),
-			"timestamp": strconv.FormatInt(time.Now().Unix(), 10),
+			"cpu":         strconv.FormatFloat(math.Round(getCPUUsage()*100)/100, 'f', 2, 64),
+			"memory":      strconv.FormatFloat(math.Round(getMemoryUsage()*100)/100, 'f', 2, 64),
+			"deployments": getLastDeployment(),
+			"timestamp":   strconv.FormatInt(time.Now().Unix(), 10),
 		}
-		fmt.Printf("[Agent] Collected Metrics - CPU: %s%%, Memory: %s%%, Deployments Last 24h: %s", hashField["cpu"], hashField["memory"], hashField["deployments_last_24h"])
+		fmt.Printf("[Agent] Collected Metrics - CPU: %s%%, Memory: %s%%, Deployments Last 24h: %s\n", hashField["cpu"], hashField["memory"], hashField["deployments"])
 		redisClient.HSet(ctx, hostname, hashField)
 		time.Sleep(10 * time.Second)
 	}

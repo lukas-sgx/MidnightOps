@@ -9,8 +9,6 @@ router.post('/verify', async (req, res) => {
     const { email, code } = req.body;
 
     try {
-        console.log('Verifying code for email:', email);
-        console.log('Provided code:', code);
         const storedCode = await redisClient.get(`login_code_${email}`);
         if (storedCode === code) {
             const result = await pool.query(

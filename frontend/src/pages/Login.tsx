@@ -37,7 +37,7 @@ export default function Login() {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'Login failed');
+                throw new Error(data.error || 'Login failed');
             }
         } catch (err: any) {
             setError(err.message || 'An error occurred. Please try again.');
@@ -62,7 +62,7 @@ export default function Login() {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'Verification failed');
+                throw new Error(data.error || 'Verification failed, please try again later.');
             }
 
             if (data.token) {

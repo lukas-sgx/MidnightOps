@@ -41,11 +41,11 @@ services:
             POSTGRES_USER: midnightops
             POSTGRES_PASSWORD: midnightops
             POSTGRES_DB: midnightops_db
-            VIRTUAL_HOST: preprod-midnightops.soigneux.works
+            VIRTUAL_HOST: midnightops.soigneux.works
             VIRTUAL_PORT: 3000
             VIRTUAL_PROTO: http
             VIRTUAL_PATH: /api,/api/
-            LETSENCRYPT_HOST: preprod-midnightops.soigneux.works
+            LETSENCRYPT_HOST: midnightops.soigneux.works
         networks:
             - midnightops_network
 
@@ -61,7 +61,7 @@ services:
             VIRTUAL_HOST: preprod-midnightops.soigneux.works
             VIRTUAL_PORT: 80
             VIRTUAL_PROTO: http
-            LETSENCRYPT_HOST: preprod-midnightops.soigneux.works
+            LETSENCRYPT_HOST: midnightops.soigneux.works
         networks:
             - midnightops_network
 
@@ -73,7 +73,7 @@ services:
             # - "443:443"
         environment:
             ENABLE_IPV6: "false"
-            DEFAULT_HOST: preprod-midnightops.soigneux.works
+            DEFAULT_HOST: midnightops.soigneux.works
         volumes:
             - /var/run/docker.sock:/tmp/docker.sock:ro
             - ./certs:/etc/nginx/certs

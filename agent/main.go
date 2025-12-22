@@ -12,6 +12,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/shirou/gopsutil/v4/cpu"
+    "github.com/shirou/gopsutil/v4/host"
 	"github.com/shirou/gopsutil/v4/mem"
 )
 
@@ -48,6 +49,15 @@ func getLastDeployment() string {
 	return strings.TrimSpace(string(deploy))
 }
 
+func getUptime() string {
+    uptime, err := host.Uptime()
+    if err != nil {
+        fmt.Println("[Agent] Error getting uptime:", err)
+        return "0"
+    }
+    return strconv.FormatUint(uptime, 10)
+}
+
 func getRedisClient() *redis.Client {
 	host := os.Getenv("REDIS_HOST")
 	port := os.Getenv("REDIS_PORT")
@@ -70,8 +80,9 @@ func metrics() {
 			"memory":      strconv.FormatFloat(math.Round(getMemoryUsage()*100)/100, 'f', 2, 64),
 			"deployments": getLastDeployment(),
 			"timestamp":   strconv.FormatInt(time.Now().Unix(), 10),
+			"uptime": 	getUptime(),
 		}
-		fmt.Printf("[Agent] Collected Metrics - CPU: %s%%, Memory: %s%%, Deployments Last 24h: %s\n", hashField["cpu"], hashField["memory"], hashField["deployments"])
+		fmt.Printf("[Agent] Collected Metrics - CPU: %s%%, Memory: %s%%, Deployments Last 24h: %s, Uptime: %s seconds\n", hashField["cpu"], hashField["memory"], hashField["deployments"], hashField["uptime"])
 		redisClient.HSet(ctx, hostname, hashField)
 		time.Sleep(10 * time.Second)
 	}

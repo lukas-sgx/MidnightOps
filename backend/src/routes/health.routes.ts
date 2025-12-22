@@ -5,7 +5,7 @@ import { authenticateToken } from "../middlewares/jwt";
 
 const router = Router();
 
-router.get("/health", async (_req, res) => {
+router.get("/health", async (req, res) => {
     var result = {
         status: "FAIL",
         message: "Service is unhealthy",
@@ -15,9 +15,9 @@ router.get("/health", async (_req, res) => {
             redis: false,
         }
     };
-    if (authenticateToken(_req.headers.authorization?.split(" ")[1] || "") != null) {
-        result.services.api = true;
-    } else {
+    const token = req.headers.authorization?.split(" ")[1] || "";
+    const userData = authenticateToken(token);
+    if (userData == null) {
         return res.status(401).json({ message: "Unauthorized" });
     }
     if (await isDatabaseConnected() == true) {

@@ -9,13 +9,19 @@ async function fetchMe() {
                 'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
             },
         });
-        if (!res.ok) {
-            throw new Error('Failed to fetch user data');
+
+        if (res.status === 401) {
+            return null;
         }
+        if (!res.ok) {
+            throw new Error(`Error ${res.status}`);
+        }
+
         const userData = await res.json();
         return userData;
     } catch (error) {
         console.error('Error fetching user data:', error);
+        return undefined;
     }
 }
 
@@ -30,7 +36,6 @@ type Metrics = {
     lastUpdated: string;
 };
 
-// Nouveaux types pour les Incidents et Alertes
 type Incident = {
     id: string;
     title: string;
@@ -82,17 +87,51 @@ function formatUptime(seconds: number) {
     return `${minutes}m`;
 }
 
-// Données simulées (à remplacer par un fetch réel plus tard)
-const MOCK_INCIDENTS: Incident[] = [
-    { id: 'INC-102', title: 'Latence élevée sur la base de données', status: 'Investigating', severity: 'Major', createdAt: new Date(Date.now() - 1000 * 60 * 45).toISOString() },
-    { id: 'INC-101', title: 'Echec déploiement API v2', status: 'Resolved', severity: 'Minor', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() },
-];
 
-const MOCK_ALERTS: Alert[] = [
-    { id: 'ALT-55', message: 'CPU usage > 85% on arch-server', type: 'warning', timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString() },
-    { id: 'ALT-54', message: 'Redis connection timeout', type: 'error', timestamp: new Date(Date.now() - 1000 * 60 * 12).toISOString() },
-    { id: 'ALT-53', message: 'Backup completed successfully', type: 'info', timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString() },
-];
+async function fetchIncidents(): Promise<Incident[]> {
+    try {
+        const res = await fetch('/api/v1/incidents', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+            },
+        });
+        if (!res.ok) throw new Error('Failed to fetch incidents');
+        const json = await res.json();
+        
+        return (json.incidents || []).map((inc: any) => ({
+            id: inc.id,
+            title: inc.title,
+            status: inc.status,
+            severity: inc.severity,
+            createdAt: inc.created_at || inc.createdAt || inc
+        }));
+    } catch (err) {
+        console.error('Error fetching incidents:', err);
+        return [];
+    }
+}
+
+async function fetchAlerts(): Promise<Alert[]> {
+    try {
+        const res = await fetch('/api/v1/alerts', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+            },
+        });
+        if (!res.ok) throw new Error('Failed to fetch alerts');
+        const json = await res.json();
+        return json.alerts || [];
+    } catch (err) {
+        console.error('Error fetching alerts:', err);
+        return [];
+    }
+}
+
+// const MOCK_ALERTS: Alert[] = [
+//     { id: 'ALT-55', message: 'CPU usage > 85% on arch-server', type: 'warning', timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString() },
+//     { id: 'ALT-54', message: 'Redis connection timeout', type: 'error', timestamp: new Date(Date.now() - 1000 * 60 * 12).toISOString() },
+//     { id: 'ALT-53', message: 'Backup completed successfully', type: 'info', timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString() },
+// ];
 
 async function fetchMetrics(): Promise<Metrics | null> {
     try {
@@ -122,7 +161,6 @@ export default function Dashboard() {
     const [metricsLoading, setMetricsLoading] = useState(true);
     const [metricsError, setMetricsError] = useState<string | null>(null);
 
-    // State pour les incidents et alertes
     const [incidents, setIncidents] = useState<Incident[]>([]);
     const [alerts, setAlerts] = useState<Alert[]>([]);
 
@@ -136,7 +174,7 @@ export default function Dashboard() {
                 setInitials(firstName.charAt(0).toUpperCase() + lastName.charAt(0).toUpperCase());
                 setEmail(data.user.email);
             }
-            if (!data) {
+            if (data === null) {
                 localStorage.removeItem('authToken');
                 navigate('/login', { replace: true });
             }
@@ -146,9 +184,8 @@ export default function Dashboard() {
     useEffect(() => {
         setMetricsLoading(true);
         
-        // Chargement des données simulées
-        setIncidents(MOCK_INCIDENTS);
-        setAlerts(MOCK_ALERTS);
+        fetchIncidents().then(setIncidents);
+        fetchAlerts().then(setAlerts);
 
         fetchMetrics()
             .then(m => setMetrics(m))
@@ -246,6 +283,7 @@ export default function Dashboard() {
                                 <p className="text-slate-400 text-sm">No active incidents.</p>
                             ) : (
                                 incidents.map((inc) => (
+                                    <a href={`/incidents/${inc.id}`} key={inc.id} className="block hover:bg-slate-700/50 rounded-lg transition">
                                     <div key={inc.id} className="bg-slate-900/40 border border-slate-700 rounded-lg p-4 flex justify-between items-center">
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
@@ -269,6 +307,7 @@ export default function Dashboard() {
                                             </span>
                                         </div>
                                     </div>
+                                    </a>
                                 ))
                             )}
                         </div>

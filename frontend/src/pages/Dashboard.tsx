@@ -30,6 +30,22 @@ type Metrics = {
     lastUpdated: string;
 };
 
+// Nouveaux types pour les Incidents et Alertes
+type Incident = {
+    id: string;
+    title: string;
+    status: 'Investigating' | 'Identified' | 'Monitoring' | 'Resolved';
+    severity: 'Critical' | 'Major' | 'Minor';
+    createdAt: string;
+};
+
+type Alert = {
+    id: string;
+    message: string;
+    type: 'warning' | 'error' | 'info';
+    timestamp: string;
+};
+
 function normalizeMetrics(data: any): Metrics {
     const toIsoDate = (timestamp: any) => {
         if (timestamp === undefined || timestamp === null) return new Date().toISOString();
@@ -48,7 +64,7 @@ function normalizeMetrics(data: any): Metrics {
         totalUsers: data?.totalUsers ?? 128,
         activeUsers: data?.activeUsers ?? 37,
         deployments: data?.deployments ?? 12,
-        uptime: data?.uptime ?? 99.96,
+        uptime: Number(data?.uptime) || 0,
         errors24h: data?.errors ?? 2,
         cpu: data?.cpu ?? 34,
         memory: data?.memory ?? 61,
@@ -65,6 +81,18 @@ function formatUptime(seconds: number) {
     if (hours > 0) return `${hours}h ${minutes}m`;
     return `${minutes}m`;
 }
+
+// Données simulées (à remplacer par un fetch réel plus tard)
+const MOCK_INCIDENTS: Incident[] = [
+    { id: 'INC-102', title: 'Latence élevée sur la base de données', status: 'Investigating', severity: 'Major', createdAt: new Date(Date.now() - 1000 * 60 * 45).toISOString() },
+    { id: 'INC-101', title: 'Echec déploiement API v2', status: 'Resolved', severity: 'Minor', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() },
+];
+
+const MOCK_ALERTS: Alert[] = [
+    { id: 'ALT-55', message: 'CPU usage > 85% on arch-server', type: 'warning', timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString() },
+    { id: 'ALT-54', message: 'Redis connection timeout', type: 'error', timestamp: new Date(Date.now() - 1000 * 60 * 12).toISOString() },
+    { id: 'ALT-53', message: 'Backup completed successfully', type: 'info', timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString() },
+];
 
 async function fetchMetrics(): Promise<Metrics | null> {
     try {
@@ -94,6 +122,10 @@ export default function Dashboard() {
     const [metricsLoading, setMetricsLoading] = useState(true);
     const [metricsError, setMetricsError] = useState<string | null>(null);
 
+    // State pour les incidents et alertes
+    const [incidents, setIncidents] = useState<Incident[]>([]);
+    const [alerts, setAlerts] = useState<Alert[]>([]);
+
     useEffect(() => {
         fetchMe().then(data => {
             if (data) {
@@ -113,6 +145,11 @@ export default function Dashboard() {
 
     useEffect(() => {
         setMetricsLoading(true);
+        
+        // Chargement des données simulées
+        setIncidents(MOCK_INCIDENTS);
+        setAlerts(MOCK_ALERTS);
+
         fetchMetrics()
             .then(m => setMetrics(m))
             .catch(err => setMetricsError(String(err)))
@@ -193,8 +230,76 @@ export default function Dashboard() {
                         )}
                     </div>
                 </div>
+            
+                {/* Section Incidents & Alertes */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+                    
+                    {/* Incidents Panel */}
+                    <div className="bg-slate-800 rounded-lg border border-slate-700 p-8">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-semibold text-white">Active Incidents 🚨</h2>
+                            <button className="text-sm text-blue-400 hover:text-blue-300 transition">View All</button>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            {incidents.length === 0 ? (
+                                <p className="text-slate-400 text-sm">No active incidents.</p>
+                            ) : (
+                                incidents.map((inc) => (
+                                    <div key={inc.id} className="bg-slate-900/40 border border-slate-700 rounded-lg p-4 flex justify-between items-center">
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                                                    inc.severity === 'Critical' ? 'bg-red-900/50 text-red-400 border border-red-900' :
+                                                    inc.severity === 'Major' ? 'bg-orange-900/50 text-orange-400 border border-orange-900' :
+                                                    'bg-blue-900/50 text-blue-400 border border-blue-900'
+                                                }`}>
+                                                    {inc.severity}
+                                                </span>
+                                                <span className="text-slate-500 text-xs">{inc.id}</span>
+                                            </div>
+                                            <p className="text-white font-medium">{inc.title}</p>
+                                            <p className="text-slate-400 text-xs mt-1">Opened: {new Date(inc.createdAt).toLocaleString()}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className={`text-sm font-semibold ${
+                                                inc.status === 'Resolved' ? 'text-emerald-400' : 'text-amber-400'
+                                            }`}>
+                                                {inc.status}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
 
-                <div className="bg-slate-800 rounded-lg border border-slate-700 p-8">
+                    {/* Alerts Panel */}
+                    <div className="bg-slate-800 rounded-lg border border-slate-700 p-8">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-semibold text-white">Recent Alerts 🔔</h2>
+                            <button className="text-sm text-slate-400 hover:text-white transition">Clear</button>
+                        </div>
+
+                        <div className="space-y-0 divide-y divide-slate-700/50">
+                            {alerts.map((alert) => (
+                                <div key={alert.id} className="py-3 flex items-start gap-3">
+                                    <div className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${
+                                        alert.type === 'error' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]' :
+                                        alert.type === 'warning' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]' :
+                                        'bg-blue-500'
+                                    }`} />
+                                    <div className="flex-1">
+                                        <p className="text-slate-200 text-sm">{alert.message}</p>
+                                        <p className="text-slate-500 text-xs mt-0.5">{new Date(alert.timestamp).toLocaleTimeString()}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+                {/* Section Metrics */}
+                <div className="bg-slate-800 rounded-lg border border-slate-700 p-8 mt-8">
                     <div className="flex items-center justify-between mb-6">
                         <h2 className="text-xl font-semibold text-white">Metrics 📈</h2>
                         <p className="text-sm text-slate-400">
@@ -203,40 +308,32 @@ export default function Dashboard() {
                     </div>
 
                     {metricsLoading ? (
-                        <div className="text-slate-300">Chargement des métriques…</div>
+                        <div className="text-slate-300">Loading metrics…</div>
                     ) : metricsError ? (
-                        <div className="text-red-400">Erreur: {metricsError}</div>
+                        <div className="text-red-400">Errors: {metricsError}</div>
                     ) : metrics ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {/* Utilisateurs totaux */}
                             <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-5">
-                                <p className="text-slate-400 text-sm">Utilisateurs</p>
+                                <p className="text-slate-400 text-sm">Users</p>
                                 <p className="text-3xl font-bold text-white">{metrics.totalUsers}</p>
-                                <p className="text-slate-500 text-xs mt-1">{metrics.activeUsers} actifs</p>
+                                <p className="text-slate-500 text-xs mt-1">{metrics.activeUsers} online</p>
                             </div>
 
-                            {/* Déploiements */}
                             <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-5">
-                                <p className="text-slate-400 text-sm">Déploiements</p>
+                                <p className="text-slate-400 text-sm">Deployments</p>
                                 <p className="text-3xl font-bold text-white">{metrics.deployments}</p>
-                                <p className="text-slate-500 text-xs mt-1">dernières 24h</p>
+                                <p className="text-slate-500 text-xs mt-1">last 24h</p>
                             </div>
 
                             {/* Uptime */}
                             <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-5">
                                 <p className="text-slate-400 text-sm">Uptime</p>
-                                <p className="text-3xl font-bold text-white">{metrics.uptime.toFixed(2)}%</p>
-                                <div className="mt-2 h-2 w-full bg-slate-700 rounded">
-                                    <div
-                                        className="h-2 bg-emerald-500 rounded"
-                                        style={{ width: `${Math.min(100, Math.max(0, metrics.uptime))}%` }}
-                                    />
-                                </div>
+                                <p className="text-3xl font-bold text-white">{formatUptime(metrics.uptime)}</p>
                             </div>
 
                             {/* Erreurs 24h */}
                             <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-5">
-                                <p className="text-slate-400 text-sm">Erreurs (24h)</p>
+                                <p className="text-slate-400 text-sm">Errors (24h)</p>
                                 <p className="text-3xl font-bold text-white">{metrics.errors24h}</p>
                             </div>
 
@@ -265,7 +362,7 @@ export default function Dashboard() {
                             </div>
                         </div>
                     ) : (
-                        <div className="text-slate-300">Aucune métrique disponible.</div>
+                        <div className="text-slate-300">No metrics available.</div>
                     )}
                 </div>
             </div>

@@ -4,7 +4,8 @@ CREATE TABLE users (
   name          TEXT NOT NULL,
   phone_number  TEXT,
   role          TEXT NOT NULL DEFAULT 'user',
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_active   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE teams (

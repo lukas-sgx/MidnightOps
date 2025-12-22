@@ -2,10 +2,22 @@ import { pool } from '../config/db';
 import { Router } from 'express';
 import { generateToken } from './jwt';
 import redisClient from '../config/redis';
+import rateLimit from 'express-rate-limit';
 
 const router = Router();
 
-router.post('/verify', async (req, res) => {
+const apiLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 5,
+    handler: (_req, res) => {
+        res.status(429).json({
+            error: 'Too many requests, please try again later.',
+            code: 429,
+        });
+    },
+});
+
+router.post('/verify', apiLimiter, async (req, res) => {
     const { email, code } = req.body;
 
     try {

@@ -3,8 +3,20 @@ import { Router } from 'express';
 import nodemailer from 'nodemailer';
 import redisClient from '../config/redis';
 import path from 'path';
+import rateLimit from 'express-rate-limit';
 
 const router = Router();
+
+const apiLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 5,
+    handler: (_req, res) => {
+        res.status(429).json({
+            error: 'Too many requests, please try again later.',
+            code: 429,
+        });
+    },
+});
 
 function getRandomInt(min: number, max: number): number {
     min = Math.ceil(min);
@@ -56,7 +68,7 @@ async function send_code(dest: string, code: number) {
     });
 }
 
-router.post('/login', async (req, res) => {
+router.post('/login', apiLimiter, async (req, res) => {
     const { email } = req.body;
 
     try {

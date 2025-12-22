@@ -5,10 +5,12 @@ import { authenticateToken } from "../middlewares/jwt";
 const router = Router();
 
 router.get("/incidents", async (req, res) => {
-    if (!authenticateToken(req.headers.authorization?.split(" ")[1] || "") != null) {
-            return res.status(401).json({ message: "Unauthorized" });
+    const token = req.headers.authorization?.split(" ")[1] || "";
+    const userData = authenticateToken(token);
+    if (userData == null) {
+        return res.status(401).json({ message: "Unauthorized" });
     }
-    await pool.query('SELECT * FROM incidents').then((result) => {
+    await pool.query('SELECT * FROM incidents WHERE status != $1', ['RESOLVED']).then((result) => {
         return res.status(200).json({ incidents: result.rows });
     }).catch((err) => {
         console.error('Error fetching incidents from database', err);

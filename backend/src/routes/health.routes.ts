@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { isDatabaseConnected } from "../config/db";
-import { isRedisConnected } from "../config/redis";
+import redisClient, { isRedisConnected } from "../config/redis";
 import { authenticateToken } from "../middlewares/jwt";
 
 const router = Router();
@@ -10,7 +10,7 @@ router.get("/health", async (req, res) => {
         status: "FAIL",
         message: "Service is unhealthy",
         services: {
-            api : true,
+            api: true,
             postgres: false,
             redis: false,
         }
@@ -20,6 +20,11 @@ router.get("/health", async (req, res) => {
     if (userData == null) {
         return res.status(401).json({ message: "Unauthorized" });
     }
+    await redisClient.get(`auth_token_${userData.email}`).then((storedToken) => {
+        if (storedToken === token) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+    });
     if (await isDatabaseConnected() == true) {
         result.services.postgres = true;
     }
@@ -32,7 +37,7 @@ router.get("/health", async (req, res) => {
     } else {
         return res.status(500).json(result);
     }
-  return res.status(200).json(result); 
+    return res.status(200).json(result);
 });
 
 export default router;

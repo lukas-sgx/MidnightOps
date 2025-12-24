@@ -9,6 +9,8 @@ import loginRoutes from './middlewares/login.routes';
 import verifyRoutes from './middlewares/verify.routes';
 import meRoutes from './routes/me.routes';
 import metricRoutes from './routes/metrics.routes';
+import alertRoutes from './routes/alerts.routes';
+import logoutRoutes from './middlewares/logout.routes';
 
 const app = express();
 
@@ -21,9 +23,11 @@ app.use('/api/v1/', incidentRoutes);
 app.use('/api/v1/', oncallRoutes);
 app.use('/api/v1/', teamsRoutes);
 app.use('/api/v1/', meRoutes);  
-app.use('/api/v1/', metricRoutes);  
+app.use('/api/v1/', metricRoutes);
+app.use('/api/v1/', alertRoutes);
 
 app.use('/api/v1/auth/', loginRoutes);
 app.use('/api/v1/auth/', verifyRoutes);
+app.use('/api/v1/auth/', logoutRoutes);
 
 export default app;

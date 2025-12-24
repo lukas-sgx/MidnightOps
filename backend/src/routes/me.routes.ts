@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { pool } from "../config/db";
 import { authenticateToken } from "../middlewares/jwt";
+import redisClient from "../config/redis";
 
 const router = Router();
 
@@ -10,6 +11,11 @@ router.get("/me", async (req, res) => {
     if (userData == null) {
         return res.status(401).json({ message: "Unauthorized" });
     }
+    await redisClient.get(`auth_token_${userData.email}`).then((storedToken) => {
+        if (storedToken === token) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+    });
 
     try {
         const result = await pool.query(

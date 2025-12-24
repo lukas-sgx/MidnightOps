@@ -13,6 +13,13 @@ router.get("/metrics", async (req, res) => {
     if (userData == null) {
         return res.status(401).json({ message: "Unauthorized" });
     }
+
+    await redisClient.get(`auth_token_${userData.email}`).then((storedToken) => {
+        if (storedToken === token) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+    });
+    
     try {
         const redisMetrics = await redisClient.hGetAll("arch");
 

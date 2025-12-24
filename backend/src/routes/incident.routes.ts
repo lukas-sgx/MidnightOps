@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { pool } from "../config/db";
 import { authenticateToken } from "../middlewares/jwt";
+import redisClient from '../config/redis';
 
 const router = Router();
 
@@ -10,7 +11,12 @@ router.get("/incidents", async (req, res) => {
     if (userData == null) {
         return res.status(401).json({ message: "Unauthorized" });
     }
-    await pool.query('SELECT * FROM incidents WHERE status != $1', ['RESOLVED']).then((result) => {
+    await redisClient.get(`auth_token_${userData.email}`).then((storedToken) => {
+        if (storedToken === token) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+    });
+    await pool.query('SELECT * FROM incidents WHERE status != $1 ORDER BY created_at DESC LIMIT 2', ['RESOLVED']).then((result) => {
         return res.status(200).json({ incidents: result.rows });
     }).catch((err) => {
         console.error('Error fetching incidents from database', err);
@@ -22,7 +28,7 @@ router.post("/incidents", async (req, res) => {
     const { title, description, severity } = req.body;
 
     if (!authenticateToken(req.headers.authorization?.split(" ")[1] || "") != null) {
-            return res.status(401).json({ message: "Unauthorized" });
+        return res.status(401).json({ message: "Unauthorized" });
     }
 
     if (!title || !description || !severity) {
@@ -44,7 +50,7 @@ router.get("/incidents/:id", async (req, res) => {
     const { id } = req.params;
 
     if (!authenticateToken(req.headers.authorization?.split(" ")[1] || "") != null) {
-            return res.status(401).json({ message: "Unauthorized" });
+        return res.status(401).json({ message: "Unauthorized" });
     }
 
     await pool.query('SELECT * FROM incidents WHERE id = $1', [id]).then((result) => {
@@ -61,7 +67,7 @@ router.get("/incidents/:id", async (req, res) => {
 router.get("/incidents/:id/alerts", async (req, res) => {
     const { id } = req.params;
     if (!authenticateToken(req.headers.authorization?.split(" ")[1] || "") != null) {
-            return res.status(401).json({ message: "Unauthorized" });
+        return res.status(401).json({ message: "Unauthorized" });
     }
     await pool.query('SELECT * FROM alerts WHERE incident_id = $1', [id]).then((result) => {
         return res.status(200).json({ alerts: result.rows });

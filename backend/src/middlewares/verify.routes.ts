@@ -19,9 +19,14 @@ const apiLimiter = rateLimit({
 
 router.post('/verify', apiLimiter, async (req, res) => {
     const { email, code } = req.body;
-
     try {
         const storedCode = await redisClient.get(`login_code_${email}`);
+        const attemptedLogin = await redisClient.get(`attempted_login_${email}`);
+
+        if (attemptedLogin && Number(attemptedLogin) >= 5) {
+            return res.status(429).json({ message: 'Too many failed attempts, please try again later.' });
+        }
+
         if (storedCode === code) {
             const result = await pool.query(
                 'SELECT * FROM users WHERE email = $1',
@@ -37,13 +42,14 @@ router.post('/verify', apiLimiter, async (req, res) => {
                 );
                 return res.status(200).json({ message: 'Login successful', user: result.rows[0], token: token});
             } else {
+                await redisClient.set(`attempted_login_${email}`, attemptedLogin ? Number(attemptedLogin) + 1 : 1, { EX: 3600 });
                 return res.status(400).json({ message: 'Invalid verification code' });
             }
         } else {
+            await redisClient.set(`attempted_login_${email}`, attemptedLogin ? Number(attemptedLogin) + 1 : 1, { EX: 3600 });
             return res.status(400).json({ message: 'Invalid verification code' });
         }
     } catch (err) {
-        console.error('Error during code verification', err);
         return res.status(500).json({ message: 'Internal Server Error' });
     }
 });

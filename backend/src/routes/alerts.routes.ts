@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { pool } from "../config/db";
+import redisClient from '../config/redis';
 import { authenticateToken } from "../middlewares/jwt";
-import redisClient from "../config/redis";
 
 const router = Router();
 
-router.get("/me", async (req, res) => {
+router.get("/alerts", async (req, res) => {
     const token = req.headers.authorization?.split(" ")[1] || "";
     const userData = authenticateToken(token);
     if (userData == null) {
@@ -18,16 +18,8 @@ router.get("/me", async (req, res) => {
     });
 
     try {
-        const result = await pool.query(
-            'SELECT id, email, name, role, created_at FROM users WHERE id = $1',
-            [userData.userId]
-        );
-
-        if (result.rows.length === 0) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        return res.status(200).json({ user: result.rows[0] });
+        const alertsResult = await pool.query('SELECT * FROM alerts WHERE status != $1 ORDER BY created_at DESC LIMIT 4', ['RESOLVED']);
+        return res.status(200).json({ alerts: alertsResult.rows });
     } catch (err) {
         console.error('Error fetching user data', err);
         return res.status(500).json({ message: "Internal Server Error" });

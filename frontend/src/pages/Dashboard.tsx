@@ -40,14 +40,14 @@ type Incident = {
     id: string;
     title: string;
     status: 'Investigating' | 'Identified' | 'Monitoring' | 'Resolved';
-    severity: 'Critical' | 'Major' | 'Minor';
+    severity: 1 | 2 | 3;
     createdAt: string;
 };
 
 type Alert = {
-    id: string;
+    id: string | number;
     message: string;
-    type: 'warning' | 'error' | 'info';
+    type: 'info' | 'warning' | 'error';
     timestamp: string;
 };
 
@@ -120,18 +120,33 @@ async function fetchAlerts(): Promise<Alert[]> {
         });
         if (!res.ok) throw new Error('Failed to fetch alerts');
         const json = await res.json();
-        return json.alerts || [];
+        
+        return (json.alerts || []).map((alert: any) => {
+            let displayMessage = `Alert ${alert.external_id}`;
+            if (alert.payload && alert.payload.metric) {
+                displayMessage = `${alert.payload.metric}: ${alert.payload.value}`;
+            } else if (alert.payload && alert.payload.status) {
+                displayMessage = `${alert.external_id}: ${alert.payload.status}`;
+            }
+            let severity: 'info' | 'warning' | 'error' = 'info';
+            if (alert.status === 'OPEN') {
+                severity = 'error';
+            } else if (alert.status === 'CLOSED') {
+                severity = 'info';
+            }
+
+            return {
+                id: alert.id,
+                message: displayMessage,
+                type: severity,
+                timestamp: alert.created_at || new Date().toISOString(),
+            };
+        });
     } catch (err) {
         console.error('Error fetching alerts:', err);
         return [];
     }
 }
-
-// const MOCK_ALERTS: Alert[] = [
-//     { id: 'ALT-55', message: 'CPU usage > 85% on arch-server', type: 'warning', timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString() },
-//     { id: 'ALT-54', message: 'Redis connection timeout', type: 'error', timestamp: new Date(Date.now() - 1000 * 60 * 12).toISOString() },
-//     { id: 'ALT-53', message: 'Backup completed successfully', type: 'info', timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString() },
-// ];
 
 async function fetchMetrics(): Promise<Metrics | null> {
     try {
@@ -201,7 +216,13 @@ export default function Dashboard() {
         return () => clearInterval(interval);
     }, []);
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        await fetch('/api/v1/auth/logout', {
+            method: 'POST',
+            headers: {
+               'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+            },
+        });
         localStorage.removeItem('authToken');
         navigate('/');
     };
@@ -288,11 +309,11 @@ export default function Dashboard() {
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
                                                 <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                                                    inc.severity === 'Critical' ? 'bg-red-900/50 text-red-400 border border-red-900' :
-                                                    inc.severity === 'Major' ? 'bg-orange-900/50 text-orange-400 border border-orange-900' :
+                                                    inc.severity === 3 ? 'bg-red-900/50 text-red-400 border border-red-900' :
+                                                    inc.severity === 2 ? 'bg-orange-900/50 text-orange-400 border border-orange-900' :
                                                     'bg-blue-900/50 text-blue-400 border border-blue-900'
                                                 }`}>
-                                                    {inc.severity}
+                                                    {inc.severity === 3 ? 'Critical' : inc.severity === 2 ? 'Major' : 'Minor'}
                                                 </span>
                                                 <span className="text-slate-500 text-xs">{inc.id}</span>
                                             </div>

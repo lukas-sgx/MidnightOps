@@ -1,6 +1,7 @@
 import { pool } from '../config/db';
 import { Router } from 'express';
 import { authenticateToken } from '../middlewares/jwt';
+import redisClient from '../config/redis';
 
 const router = Router();
 
@@ -10,6 +11,13 @@ router.get('/teams', async (req, res) => {
     if (userData == null) {
         return res.status(401).json({ message: "Unauthorized" });
     }
+
+    await redisClient.get(`auth_token_${userData.email}`).then((storedToken) => {
+        if (storedToken === token) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+    });
+
     await pool.query('SELECT * FROM teams').then((result) => {
         return res.status(200).json({ teams: result.rows });
     }).catch((err) => {
@@ -20,10 +28,18 @@ router.get('/teams', async (req, res) => {
 
 router.get('/teams/:id', async (req, res) => {
     const teamId = req.params.id;
-
-    if (!authenticateToken(req.headers.authorization?.split(" ")[1] || "") != null) {
-            return res.status(401).json({ message: "Unauthorized" });
+    const token = req.headers.authorization?.split(" ")[1] || "";
+    const userData = authenticateToken(token);
+    if (userData == null) {
+        return res.status(401).json({ message: "Unauthorized" });
     }
+
+    await redisClient.get(`auth_token_${userData.email}`).then((storedToken) => {
+        if (storedToken === token) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+    });
+
     try {
         const teamResult = await pool.query('SELECT * FROM teams WHERE id = $1', [teamId]);
         const teamMembersResult = await pool.query('SELECT * FROM team_members WHERE team_id = $1', [teamId]);

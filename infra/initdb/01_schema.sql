@@ -46,13 +46,16 @@ CREATE TABLE incidents (
 );
 
 CREATE TABLE alerts (
-  id           SERIAL PRIMARY KEY,
-  incident_id  INTEGER REFERENCES incidents(id) ON DELETE SET NULL,
-  source       TEXT NOT NULL,
-  external_id  TEXT,
-  payload      JSONB NOT NULL,
-  status       TEXT NOT NULL DEFAULT 'OPEN',
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id              SERIAL PRIMARY KEY,
+  incident_id     INTEGER REFERENCES incidents(id) ON DELETE SET NULL,
+  source          TEXT NOT NULL,
+  message         TEXT,
+  severity        INTEGER,
+  correlation_key TEXT,
+  external_id     TEXT,
+  payload         JSONB DEFAULT '{}'::jsonb,
+  status          TEXT NOT NULL DEFAULT 'OPEN',
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE escalation_policies (

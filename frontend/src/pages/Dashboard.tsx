@@ -39,7 +39,7 @@ type Metrics = {
 type Incident = {
     id: string;
     title: string;
-    status: 'Investigating' | 'Identified' | 'Monitoring' | 'Resolved';
+    status: 'OPEN' | 'ACKED' | 'RESOLVED';
     severity: 1 | 2 | 3;
     createdAt: string;
 };
@@ -122,14 +122,17 @@ async function fetchAlerts(): Promise<Alert[]> {
         const json = await res.json();
         
         return (json.alerts || []).map((alert: any) => {
-            let displayMessage = `Alert ${alert.external_id}`;
-            if (alert.payload && alert.payload.metric) {
+            let displayMessage = alert.message || `Alert ${alert.correlation_key || alert.external_id || alert.source || 'Unknown'}`;
+            if (!alert.message && alert.payload && alert.payload.metric) {
                 displayMessage = `${alert.payload.metric}: ${alert.payload.value}`;
-            } else if (alert.payload && alert.payload.status) {
-                displayMessage = `${alert.external_id}: ${alert.payload.status}`;
+            } else if (!alert.message && alert.payload && alert.payload.status) {
+                displayMessage = `${alert.correlation_key || alert.external_id}: ${alert.payload.status}`;
             }
             let severity: 'info' | 'warning' | 'error' = 'info';
-            if (alert.status === 'OPEN') {
+            if (alert.severity) {
+                 if (String(alert.severity) === 'critical' || String(alert.severity) === 'high' || alert.severity === 1) severity = 'error';
+                 else if (String(alert.severity) === 'warning' || String(alert.severity) === 'medium' || alert.severity === 2) severity = 'warning';
+            } else if (alert.status === 'OPEN') {
                 severity = 'error';
             } else if (alert.status === 'CLOSED') {
                 severity = 'info';
@@ -296,7 +299,7 @@ export default function Dashboard() {
                     <div className="bg-slate-800 rounded-lg border border-slate-700 p-8">
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-xl font-semibold text-white">Active Incidents 🚨</h2>
-                            <button className="text-sm text-blue-400 hover:text-blue-300 transition">View All</button>
+                            <button className="text-sm text-blue-400 hover:text-blue-300 transition" onClick={() => navigate('/incidents')}>View All</button>
                         </div>
                         
                         <div className="space-y-4">
@@ -304,7 +307,7 @@ export default function Dashboard() {
                                 <p className="text-slate-400 text-sm">No active incidents.</p>
                             ) : (
                                 incidents.map((inc) => (
-                                    <a href={`/incidents/${inc.id}`} key={inc.id} className="block hover:bg-slate-700/50 rounded-lg transition">
+                                    <a href={`/incidents`} key={inc.id} className="block hover:bg-slate-700/50 rounded-lg transition">
                                     <div key={inc.id} className="bg-slate-900/40 border border-slate-700 rounded-lg p-4 flex justify-between items-center">
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
@@ -322,7 +325,7 @@ export default function Dashboard() {
                                         </div>
                                         <div className="text-right">
                                             <span className={`text-sm font-semibold ${
-                                                inc.status === 'Resolved' ? 'text-emerald-400' : 'text-amber-400'
+                                                inc.status === 'RESOLVED' ? 'text-emerald-400' : inc.status === 'ACKED' ? 'text-amber-400' : 'text-red-400'
                                             }`}>
                                                 {inc.status}
                                             </span>
@@ -338,23 +341,31 @@ export default function Dashboard() {
                     <div className="bg-slate-800 rounded-lg border border-slate-700 p-8">
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-xl font-semibold text-white">Recent Alerts 🔔</h2>
-                            <button className="text-sm text-slate-400 hover:text-white transition">Clear</button>
+                            <button className="text-sm text-slate-400 hover:text-white transition" onClick={() => {setAlerts([]);}}>Clear</button>
                         </div>
 
-                        <div className="space-y-0 divide-y divide-slate-700/50">
-                            {alerts.map((alert) => (
-                                <div key={alert.id} className="py-3 flex items-start gap-3">
-                                    <div className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${
-                                        alert.type === 'error' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]' :
-                                        alert.type === 'warning' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]' :
-                                        'bg-blue-500'
-                                    }`} />
-                                    <div className="flex-1">
-                                        <p className="text-slate-200 text-sm">{alert.message}</p>
-                                        <p className="text-slate-500 text-xs mt-0.5">{new Date(alert.timestamp).toLocaleTimeString()}</p>
+                        <div className="space-y-0 divide-y divide-slate-700/50 pannel">
+                            {alerts.length === 0 ?
+                                (
+                                    <div className="py-3 flex items-center justify-center align-middle">
+                                        <p className="text-slate-400 text-xl text-center">No recent alerts.</p>
                                     </div>
-                                </div>
-                            ))}
+                                )
+                                : alerts.map((alert) => (
+                                    <div key={alert.id} className="py-3 flex items-start gap-3">
+                                        <div className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${
+                                            alert.type === 'error' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]' :
+                                                alert.type === 'warning' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]' :
+                                                'bg-blue-500'
+                                            }`} />
+                                            <div className="flex-1">
+                                                <p className="text-slate-200 text-sm">{alert.message}</p>
+                                                <p className="text-slate-500 text-xs mt-0.5">{new Date(alert.timestamp).toLocaleTimeString()}</p>
+                                            </div>
+                                        </div>
+                                    )
+                                )
+                            }
                         </div>
                     </div>
                 </div>

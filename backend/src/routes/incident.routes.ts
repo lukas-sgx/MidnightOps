@@ -16,7 +16,7 @@ router.get("/incidents", async (req, res) => {
             return res.status(401).json({ message: "Unauthorized" });
         }
     });
-    await pool.query('SELECT * FROM incidents WHERE status != $1 ORDER BY created_at DESC LIMIT 2', ['RESOLVED']).then((result) => {
+    await pool.query('SELECT * FROM incidents WHERE status != $1 ORDER BY created_at DESC LIMIT 20', ['RESOLVED']).then((result) => {
         return res.status(200).json({ incidents: result.rows });
     }).catch((err) => {
         console.error('Error fetching incidents from database', err);
@@ -26,8 +26,9 @@ router.get("/incidents", async (req, res) => {
 
 router.post("/incidents", async (req, res) => {
     const { title, description, severity } = req.body;
-
-    if (!authenticateToken(req.headers.authorization?.split(" ")[1] || "") != null) {
+    const token = req.headers.authorization?.split(" ")[1] || "";
+    const userData = authenticateToken(token);
+    if (userData == null) {
         return res.status(401).json({ message: "Unauthorized" });
     }
 
@@ -36,7 +37,7 @@ router.post("/incidents", async (req, res) => {
     }
 
     const query = 'INSERT INTO incidents (title, description, severity, status, created_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING *';
-    const values = [title, description, severity, 'open'];
+    const values = [title, description, severity, 'OPEN'];
 
     await pool.query(query, values).then((result) => {
         return res.status(201).json({ incident: result.rows[0] });
@@ -73,6 +74,30 @@ router.get("/incidents/:id/alerts", async (req, res) => {
         return res.status(200).json({ alerts: result.rows });
     }).catch((err) => {
         console.error('Error fetching alerts from database', err);
+        return res.status(500).json({ message: "Internal Server Error" });
+    });
+});
+
+router.patch("/incidents/:id/status", async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    const token = req.headers.authorization?.split(" ")[1] || "";
+    const userData = authenticateToken(token);
+    if (userData == null) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    if (!status) {
+        return res.status(400).json({ message: "Missing status" });
+    }
+
+    await pool.query('UPDATE incidents SET status = $1, resolved_at = CASE WHEN $1 = \'RESOLVED\' THEN NOW() ELSE NULL END WHERE id = $2 RETURNING *', [status, id]).then((result) => {
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "Incident not found" });
+        }
+        return res.status(200).json({ incident: result.rows[0] });
+    }).catch((err) => {
+        console.error('Error updating incident status', err);
         return res.status(500).json({ message: "Internal Server Error" });
     });
 });

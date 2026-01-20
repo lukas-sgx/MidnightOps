@@ -3,6 +3,8 @@ import './App.css';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Incidents from './pages/Incidents';
+import Profile from './pages/Profile';
+import Settings from './pages/Setting';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -26,7 +28,25 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          }
+        />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
+
+
       </Routes>
     </Router>
   );

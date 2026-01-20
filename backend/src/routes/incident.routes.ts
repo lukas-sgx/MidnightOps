@@ -100,6 +100,9 @@ router.patch("/incidents/:id/status", async (req, res) => {
         console.error('Error updating incident status', err);
         return res.status(500).json({ message: "Internal Server Error" });
     });
+    await pool.query('UPDATE alerts SET status = $1 WHERE incident_id = $2 AND status != $1', [status, id]).catch((err) => {
+        console.error('Error updating related alerts status', err);
+    });
 });
 
 export default router;

@@ -1,0 +1,20 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@ae5bcf31543244e0bc0b0a14a4374ae2f199eebe805de0ad58f20d36b5d5649b
+    - name: Build
+      run: docker compose -f infra/docker-compose.yml build
+    - name: Container verif
+      run: docker ps -a

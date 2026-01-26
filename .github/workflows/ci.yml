@@ -14,9 +14,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+    - name: Fix line endings and permissions
+      run: |
+        sed -i 's/\r$//' dev/setenv.sh
+        chmod +x dev/setenv.sh
+    
     - name: Set env
       run: ./dev/setenv.sh
+      
     - name: Build
       run: docker compose -f infra/docker-compose.yml build
+    
     - name: Container verif
       run: docker ps -a

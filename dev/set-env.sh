@@ -1,9 +1,9 @@
 #!/bin/bash
 
-echo $VITE_API_URL >> frontend/src/.env
-echo $SMTP_USER >> backend/src/.env
-echo $SMTP_PASS >> backend/src/.env
-echo $JWT_SECRET >> backend/src/.env
+echo $VITE_API_URL >> frontend/.env
+echo $SMTP_USER >> backend/.env
+echo $SMTP_PASS >> backend/.env
+echo $JWT_SECRET >> backend/.env
 echo $TLS_LEVEL >> infra/mailserver.env
 echo $ENABLE_SPAMASSASSIN >> infra/mailserver.env
 echo $ENABLE_CLAMAV >> infra/mailserver.env

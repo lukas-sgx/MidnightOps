@@ -23,6 +23,12 @@ jobs:
       
     - name: Build
       run: docker compose -f infra/docker-compose.yml build
-    
-    - name: Container verif
+
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+    - name: Launch Deployments
+      run: docker compose -f infra/docker-compose.yml up -d
+    - name: Container check
       run: docker ps -a

@@ -14,18 +14,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-    - name: Debug File Structure
+    - name: Add permissions setenc
       run: |
-        echo "Current directory: $(pwd)"
-        echo "Listing all files:"
-        ls -R
-    # - name: Fix line endings and permissions
-    #   run: |
-    #     sed -i 's/\r$//' dev/setenv.sh
-    #     chmod +x dev/setenv.sh
+        chmod +x dev/set-env.sh
     
-    - name: Set env
-      run: ./dev/setenv.sh
+    - name: Set up environements
+      run: ./dev/set-env.sh
       
     - name: Build
       run: docker compose -f infra/docker-compose.yml build

@@ -17,17 +17,27 @@ jobs:
       run: docker run --rm -v ${{ github.workspace }}:/workspace alpine sh -c "rm -rf /workspace/*" || true
 
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-    - name: Set up environements
+    - name: Set up environments
       env:
         JWT_SECRET: ${{ secrets.JWT_SECRET }}
         SMTP_USER: ${{ secrets.SMTP_USER }}
         SMTP_PASS: ${{ secrets.SMTP_PASS }}
         VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        RELAY_USER: ${{ secrets.RELAY_USER }}
+        RELAY_PASSWORD: ${{ secrets.RELAY_PASSWORD }}
+        RELAY_HOST: ${{ secrets.RELAY_HOST }}
       run: |
-        echo "SMTP_USER=$SMTP_USER" >> backend/.env
-        echo "SMTP_PASS=$SMTP_PASS" >> backend/.env
-        echo "JWT_SECRET=$JWT_SECRET" >> backend/.env
-        cp backend/.env backend/src
+        cat <<EOF > backend/.env
+        SMTP_USER=$SMTP_USER
+        SMTP_PASS=$SMTP_PASS
+        JWT_SECRET=$JWT_SECRET
+        EOF
+        cp backend/.env backend/src/.env
+        cat <<EOF > infra/mailserver.env
+        RELAY_USER=$RELAY_USER
+        RELAY_PASSWORD=$RELAY_PASSWORD
+        RELAY_HOST=$RELAY_HOST
+        EOF
         echo "VITE_API_URL=$VITE_API_URL" >> frontend/src/.env
         
     - name: Verify Build
@@ -39,23 +49,6 @@ jobs:
     runs-on: self-hosted
 
     steps:
-    - name: Set up environements
-      env:
-        JWT_SECRET: ${{ secrets.JWT_SECRET }}
-        SMTP_USER: ${{ secrets.SMTP_USER }}
-        SMTP_PASS: ${{ secrets.SMTP_PASS }}
-        VITE_API_URL: ${{ secrets.VITE_API_URL }}
-        RELAY_USER: ${{ secrets.RELAY_USER }}
-        RELAY_PASSWORD: ${{ secrets.RELAY_PASSWORD }}
-        RELAY_HOST: ${{ secrets.RELAY_HOST }}
-      run: |
-        echo "SMTP_USER=$SMTP_USER" >> backend/.env
-        echo "SMTP_PASS=$SMTP_PASS" >> backend/.env
-        echo "JWT_SECRET=$JWT_SECRET" >> backend/.env
-        cp backend/.env backend/src
-        echo "RELAY_USER=$RELAY_USER" >> infra/mailserver.env
-        echo "RELAY_PASSWORD=$RELAY_PASSWORD" >> infra/mailserver.env
-        echo "RELAY_HOST=$RELAY_HOST" >> infra/mailserver.env
     - name: Refresh Images
       run: docker compose -f infra/docker-compose.yml down --remove-orphans
     - name: Launch Deployments

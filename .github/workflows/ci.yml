@@ -11,8 +11,11 @@ jobs:
   build-check:
     if: github.ref == 'refs/heads/main'
     runs-on: self-hosted
-
+    
     steps:
+    - name: Pre-cleanup
+      run: docker run --rm -v ${{ github.workspace }}:/workspace alpine sh -c "rm -rf /workspace/*" || true
+
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
     - name: Set up environements
       env:

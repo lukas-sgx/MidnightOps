@@ -8,27 +8,37 @@ on:
 
 jobs:
 
-  build:
-
+  build-check:
+    if: github.ref == 'refs/heads/main'
     runs-on: self-hosted
 
     steps:
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-    - name: Add permissions setenc
+    - name: Set up environements
       run: |
         chmod +x dev/set-env.sh
-    
-    - name: Set up environements
-      run: ./dev/set-env.sh
+        ./dev/set-env.sh
       
-    - name: Build
+    - name: Verify Build
       run: docker compose -f infra/docker-compose.yml build
 
   deploy:
+    needs: build-check
+    if: github.ref == 'refs/heads/main'
     runs-on: self-hosted
 
     steps:
+    - name: Set up environements
+      run: |
+        chmod +x dev/set-env.sh
+        ./dev/set-env.sh
+    - name: Refresh Images
+      run: docker compose -f infra/docker-compose.yml down --remove-orphans
     - name: Launch Deployments
-      run: docker compose -f infra/docker-compose.yml up -d
-    - name: Container check
+      run: docker compose -f infra/docker-compose.yml up -d --build
+
+    - name: Clean up system
+      run: docker system prune -f
+        
+    - name: Health Check
       run: docker ps -a

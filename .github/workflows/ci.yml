@@ -11,6 +11,7 @@ jobs:
   build-check:
     if: github.ref == 'refs/heads/main'
     runs-on: self-hosted
+    environment: secrets
     
     steps:
     - name: Pre-cleanup

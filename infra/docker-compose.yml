@@ -114,6 +114,7 @@ services:
         domainname: soigneux.works
         container_name: mailserver
         env_file: mailserver.env
+        user: "${UID}:${GID}" 
         ports:
             - "25:25"      # SMTP
             - "587:587"    # Submission

@@ -40,7 +40,7 @@ jobs:
         RELAY_HOST=$RELAY_HOST
         EOF
         chmod +x dev/set-env.sh
-        ./set-env.sh
+        ./dev/set-env.sh
         echo "VITE_API_URL=$VITE_API_URL" >> frontend/src/.env
         
     - name: Verify Build

@@ -1,19 +1,15 @@
 #!/bin/bash
 
-echo $VITE_API_URL >> frontend/.env
-echo $SMTP_USER >> backend/.env
-echo $SMTP_PASS >> backend/.env
-echo $JWT_SECRET >> backend/.env
-echo $TLS_LEVEL >> infra/mailserver.env
-echo $ENABLE_SPAMASSASSIN >> infra/mailserver.env
-echo $ENABLE_CLAMAV >> infra/mailserver.env
-echo $ENABLE_FAIL2BAN >> infra/mailserver.env
-echo $ONE_DIR >> infra/mailserver.env
-echo $PERMIT_DOCKER >> infra/mailserver.env
-echo $ENABLE_AMAVIS >> infra/mailserver.env
-echo $RELAY_HOST >> infra/mailserver.env
-echo $RELAY_PORT >> infra/mailserver.env
-echo $RELAY_USER >> infra/mailserver.env
-echo $RELAY_PASSWORD >> infra/mailserver.env
-echo $ENABLE_CLAMAV >> infra/mailserver.env
-echo $ENABLE_OPENDMARC >> infra/mailserver.env
+echo "Setting up environment variables..."
+cat <<EOF
+    TLS_LEVEL=modern
+    ENABLE_SPAMASSASSIN=1
+    ENABLE_CLAMAV=0
+    ENABLE_FAIL2BAN=1
+    ONE_DIR=1
+    PERMIT_DOCKER=connected-networks
+    ENABLE_AMAVIS=0
+    RELAY_PORT=587
+    ENABLE_CLAMAV=0
+    ENABLE_OPENDMARC=1
+EOF > infra/mailserver.env

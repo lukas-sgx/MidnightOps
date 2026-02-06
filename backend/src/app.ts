@@ -5,6 +5,7 @@ import healthRoutes from './routes/health.routes';
 import incidentRoutes from './routes/incident.routes';
 import oncallRoutes from './routes/oncall.routes';
 import teamsRoutes from './routes/teams.routes';
+import escalationRoutes from './routes/escalation.routes';
 import loginRoutes from './middlewares/login.routes';
 import verifyRoutes from './middlewares/verify.routes';
 import meRoutes from './routes/me.routes';
@@ -16,11 +17,13 @@ const app = express();
 
 app.use(helmet());
 app.use(cors());
+app.set('trust proxy', 1);
 app.use(express.json());
 
 app.use('/api/v1/', healthRoutes);
 app.use('/api/v1/', incidentRoutes);
 app.use('/api/v1/', oncallRoutes);
+app.use('/api/v1/', escalationRoutes);
 app.use('/api/v1/', teamsRoutes);
 app.use('/api/v1/', meRoutes);  
 app.use('/api/v1/', metricRoutes);

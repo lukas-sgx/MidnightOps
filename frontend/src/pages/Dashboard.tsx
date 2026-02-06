@@ -51,6 +51,15 @@ type Alert = {
     timestamp: string;
 };
 
+type OnCall = {
+    id: number;
+    user_name: string;
+    user_email: string;
+    team_name: string;
+    starts_at: string;
+    ends_at: string;
+};
+
 function normalizeMetrics(data: any): Metrics {
     const toIsoDate = (timestamp: any) => {
         if (timestamp === undefined || timestamp === null) return new Date().toISOString();
@@ -167,6 +176,22 @@ async function fetchMetrics(): Promise<Metrics | null> {
     }
 }
 
+async function fetchOnCall(): Promise<OnCall[]> {
+    try {
+        const res = await fetch('/api/v1/oncall', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+            },
+        });
+        if (!res.ok) throw new Error('Failed to fetch on-call');
+        const data = await res.json();
+        return data.oncall || [];
+    } catch (err) {
+        console.error('Fetch on-call error:', err);
+        return [];
+    }
+}
+
 export default function Dashboard() {
     const [showMenu, setShowMenu] = useState(false);
     const [initials, setInitials] = useState('');
@@ -181,6 +206,7 @@ export default function Dashboard() {
 
     const [incidents, setIncidents] = useState<Incident[]>([]);
     const [alerts, setAlerts] = useState<Alert[]>([]);
+    const [onCallData, setOnCallData] = useState<OnCall[]>([]);
 
     useEffect(() => {
         fetchMe().then(data => {
@@ -204,6 +230,7 @@ export default function Dashboard() {
         
         fetchIncidents().then(setIncidents);
         fetchAlerts().then(setAlerts);
+        fetchOnCall().then(setOnCallData);
 
         fetchMetrics()
             .then(m => setMetrics(m))
@@ -214,6 +241,7 @@ export default function Dashboard() {
             fetchMetrics()
                 .then(m => setMetrics(m))
                 .catch(err => setMetricsError(String(err)));
+            fetchOnCall().then(setOnCallData);
         }, 10000);
 
         return () => clearInterval(interval);
@@ -281,6 +309,15 @@ export default function Dashboard() {
                                 <button
                                     onClick={() => {
                                         setShowMenu(false);
+                                        navigate('/management');
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-slate-300 hover:bg-slate-700 transition rounded-none"
+                                >
+                                    🛠️ Management
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setShowMenu(false);
                                         handleLogout();
                                     }}
                                     className="w-full text-left px-4 py-2 text-red-400 hover:bg-red-900/20 transition rounded-b-lg rounded-t-none"
@@ -306,7 +343,7 @@ export default function Dashboard() {
                             {incidents.length === 0 ? (
                                 <p className="text-slate-400 text-sm">No active incidents.</p>
                             ) : (
-                                incidents.map((inc) => (
+                                incidents.map((inc: Incident) => (
                                     <a href={`/incidents`} key={inc.id} className="block hover:bg-slate-700/50 rounded-lg transition">
                                     <div key={inc.id} className="bg-slate-900/40 border border-slate-700 rounded-lg p-4 flex justify-between items-center">
                                         <div>
@@ -351,7 +388,7 @@ export default function Dashboard() {
                                         <p className="text-slate-400 text-xl text-center">No recent alerts.</p>
                                     </div>
                                 )
-                                : alerts.map((alert) => (
+                                : alerts.map((alert: Alert) => (
                                     <div key={alert.id} className="py-3 flex items-start gap-3">
                                         <div className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${
                                             alert.type === 'error' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]' :
@@ -366,6 +403,34 @@ export default function Dashboard() {
                                     )
                                 )
                             }
+                        </div>
+                    </div>
+
+                    {/* On-Call Panel */}
+                    <div className="bg-slate-800 rounded-lg border border-slate-700 p-8">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-semibold text-white">Who is On-Call? 📞</h2>
+                        </div>
+
+                        <div className="space-y-4">
+                            {onCallData.length === 0 ? (
+                                <p className="text-slate-400 text-sm">No one is currently on call.</p>
+                            ) : (
+                                onCallData.map((oc: OnCall) => (
+                                    <div key={oc.id} className="bg-slate-900/40 border border-slate-700 rounded-lg p-4 flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400 font-bold border border-blue-900/50">
+                                            {oc.user_name.split(' ').map(n => n[0]).join('')}
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-white font-medium">{oc.user_name}</p>
+                                            <p className="text-slate-400 text-xs">{oc.team_name}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-xs text-slate-500 italic">Until {new Date(oc.ends_at).toLocaleTimeString()}</p>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </div>
                 </div>

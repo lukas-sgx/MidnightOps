@@ -66,4 +66,17 @@ router.get('/teams/:id', async (req, res) => {
     }
 });
 
+router.get('/services', async (req, res) => {
+    if (authenticateToken(req.headers.authorization?.split(" ")[1] || "") == null) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+    try {
+        const result = await pool.query('SELECT * FROM services');
+        res.status(200).json({ services: result.rows });
+    } catch (err) {
+        console.error('Error fetching services', err);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+
 export default router;

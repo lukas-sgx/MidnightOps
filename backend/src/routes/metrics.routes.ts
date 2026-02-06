@@ -14,14 +14,18 @@ router.get("/metrics", async (req, res) => {
         return res.status(401).json({ message: "Unauthorized" });
     }
 
-    await redisClient.get(`auth_token_${userData.email}`).then((storedToken) => {
-        if (storedToken === token) {
-            return res.status(401).json({ message: "Unauthorized" });
-        }
-    });
+    const blacklistedToken = await redisClient.get(`auth_token_${userData.email}`);
+    if (blacklistedToken === token) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
     
     try {
-        const redisMetrics = await redisClient.hGetAll("arch");
+        const [redisMetrics, errorsRes, totalUsersRes, activeUsersRes] = await Promise.all([
+            redisClient.hGetAll("arch"),
+            pool.query("SELECT COUNT(*) FROM incidents WHERE created_at >= (NOW() - INTERVAL '1 DAY')"),
+            pool.query("SELECT COUNT(*) FROM users"),
+            pool.query("SELECT COUNT(*) FROM users WHERE last_active >= (NOW() - INTERVAL '1 DAY')")
+        ]);
 
         const parseMetric = (value?: string) => {
             if (!value) return 0;
@@ -36,12 +40,12 @@ router.get("/metrics", async (req, res) => {
         const memory = parseMetric(redisMetrics.memory);
         const deployments = parseMetric(redisMetrics.deployments);
         const timestamp = parseMetric(redisMetrics.timestamp);
-        const errors = await pool.query("select COUNT(*) from incidents WHERE created_at BETWEEN (NOW() - INTERVAL '1 DAY') AND NOW()");
-        const totalUsers = await pool.query("SELECT COUNT(*) FROM users");
-        const activeUsers = await pool.query("SELECT COUNT(*) FROM users WHERE last_active >= (NOW() - INTERVAL '1 DAY')");
+        const errors = errorsRes.rows[0].count;
+        const totalUsers = totalUsersRes.rows[0].count;
+        const activeUsers = activeUsersRes.rows[0].count;
         const uptime = parseMetric(redisMetrics.uptime);
 
-        return res.status(200).json({ cpu, memory, deployments, timestamp, errors: errors.rows[0].count, totalUsers: totalUsers.rows[0].count, activeUsers: activeUsers.rows[0].count, uptime });
+        return res.status(200).json({ cpu, memory, deployments, timestamp, errors, totalUsers, activeUsers, uptime });
     } catch (err) {
         console.error("Error fetching metrics", err);
         return res.status(500).json({ message: "Internal Server Error" });

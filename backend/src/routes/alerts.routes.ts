@@ -12,11 +12,10 @@ router.get("/alerts", async (req, res) => {
     if (userData == null) {
         return res.status(401).json({ message: "Unauthorized" });
     }
-    await redisClient.get(`auth_token_${userData.email}`).then((storedToken) => {
-        if (storedToken === token) {
-            return res.status(401).json({ message: "Unauthorized" });
-        }
-    });
+    const blacklistedToken = await redisClient.get(`auth_token_${userData.email}`);
+    if (blacklistedToken === token) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
 
     try {
         const alertsResult = await pool.query('SELECT * FROM alerts WHERE status != $1 ORDER BY created_at DESC LIMIT 4', ['RESOLVED']);

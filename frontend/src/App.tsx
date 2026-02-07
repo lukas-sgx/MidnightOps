@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import Incidents from './pages/Incidents';
 import Profile from './pages/Profile';
 import Settings from './pages/Setting';
+import Management from './pages/Management';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -41,6 +42,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Settings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/management"
+          element={
+            <ProtectedRoute>
+              <Management />
             </ProtectedRoute>
           }
         />

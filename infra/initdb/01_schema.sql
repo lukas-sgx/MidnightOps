@@ -42,7 +42,10 @@ CREATE TABLE incidents (
   created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   acknowledged_at  TIMESTAMPTZ,
   resolved_at      TIMESTAMPTZ,
-  acknowledged_by  INTEGER REFERENCES users(id) ON DELETE SET NULL
+  acknowledged_by  INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  postmortem       TEXT,
+  current_escalation_level INTEGER NOT NULL DEFAULT 0,
+  last_notified_at TIMESTAMPTZ
 );
 
 CREATE TABLE alerts (

@@ -199,7 +199,7 @@ export default function Login() {
 
                 {/* Footer */}
                 <p className="text-center text-slate-500 text-xs mt-8">
-                    © 2025 MidnightOps. All rights reserved.
+                    © 2025 - {new Date().getFullYear()} MidnightOps. All rights reserved.
                 </p>
             </div>
         </div>

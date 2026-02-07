@@ -60,6 +60,14 @@ type OnCall = {
     ends_at: string;
 };
 
+type Service = {
+    id: number;
+    name: string;
+    description: string;
+    team_name: string;
+    active_incidents: number;
+};
+
 function normalizeMetrics(data: any): Metrics {
     const toIsoDate = (timestamp: any) => {
         if (timestamp === undefined || timestamp === null) return new Date().toISOString();
@@ -192,6 +200,22 @@ async function fetchOnCall(): Promise<OnCall[]> {
     }
 }
 
+async function fetchServices(): Promise<Service[]> {
+    try {
+        const res = await fetch('/api/v1/services', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+            },
+        });
+        if (!res.ok) throw new Error('Failed to fetch services');
+        const data = await res.json();
+        return data.services || [];
+    } catch (err) {
+        console.error('Fetch services error:', err);
+        return [];
+    }
+}
+
 export default function Dashboard() {
     const [showMenu, setShowMenu] = useState(false);
     const [initials, setInitials] = useState('');
@@ -207,6 +231,7 @@ export default function Dashboard() {
     const [incidents, setIncidents] = useState<Incident[]>([]);
     const [alerts, setAlerts] = useState<Alert[]>([]);
     const [onCallData, setOnCallData] = useState<OnCall[]>([]);
+    const [services, setServices] = useState<Service[]>([]);
 
     useEffect(() => {
         fetchMe().then(data => {
@@ -231,6 +256,7 @@ export default function Dashboard() {
         fetchIncidents().then(setIncidents);
         fetchAlerts().then(setAlerts);
         fetchOnCall().then(setOnCallData);
+        fetchServices().then(setServices);
 
         fetchMetrics()
             .then(m => setMetrics(m))
@@ -242,6 +268,7 @@ export default function Dashboard() {
                 .then(m => setMetrics(m))
                 .catch(err => setMetricsError(String(err)));
             fetchOnCall().then(setOnCallData);
+            fetchServices().then(setServices);
         }, 10000);
 
         return () => clearInterval(interval);
@@ -427,6 +454,42 @@ export default function Dashboard() {
                                         </div>
                                         <div className="text-right">
                                             <p className="text-xs text-slate-500 italic">Until {new Date(oc.ends_at).toLocaleTimeString()}</p>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Services Panel */}
+                    <div className="bg-slate-800 rounded-lg border border-slate-700 p-8">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-semibold text-white">Services Management 🛠️</h2>
+                            <button className="text-sm text-blue-400 hover:text-blue-300 transition" onClick={() => navigate('/management')}>Manage</button>
+                        </div>
+
+                        <div className="space-y-4">
+                            {services.length === 0 ? (
+                                <p className="text-slate-400 text-sm">No services registered.</p>
+                            ) : (
+                                services.map((svc: Service) => (
+                                    <div key={svc.id} className="bg-slate-900/40 border border-slate-700 rounded-lg p-4 flex items-center justify-between">
+                                        <div>
+                                            <p className="text-white font-medium">{svc.name}</p>
+                                            <p className="text-slate-400 text-xs italic">{svc.team_name || 'No team'}</p>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            {svc.active_incidents > 0 ? (
+                                                <span className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-red-900/30 text-red-400 text-xs font-bold border border-red-900/50">
+                                                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                                                    {svc.active_incidents} active
+                                                </span>
+                                            ) : (
+                                                <span className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-900/30 text-emerald-400 text-xs font-bold border border-emerald-900/50">
+                                                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                                                    Healthy
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 ))

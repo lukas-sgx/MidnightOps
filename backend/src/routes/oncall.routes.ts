@@ -71,6 +71,7 @@ router.post("/oncall/shifts", async (req, res) => {
         return res.status(401).json({ message: "Unauthorized" });
     }
     const { schedule_id, user_id, starts_at, ends_at } = req.body;
+    
     try {
         const result = await pool.query(
             "INSERT INTO oncall_shifts (schedule_id, user_id, starts_at, ends_at) VALUES ($1, $2, $3, $4) RETURNING *",
